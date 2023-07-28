@@ -5,12 +5,12 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const saveLastPublishedDate = async (lastEntry) => {
+const saveFound = async () => {
     const { data, error } = await supabase
-        .from('jobs')
+        .from('bits')
         .insert([
             {
-                published_date: lastEntry.published_at,
+                found: true,
             }
         ]);
 
@@ -21,22 +21,20 @@ const saveLastPublishedDate = async (lastEntry) => {
 }
 
 
-const getLastPublishedAt = async () => {
+const getLastFound = async () => {
     // there is only 1 row in this table
     const { data, error } = await supabase
-        .from('jobs')
-        .select('published_date')
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .from('bits')
+        .select('*');
 
-    if (error) console.log('Error getting last published at:', error);
-    else console.log('Last published at:', data);
+    if (error) console.log('Error getting found:', error);
+    else console.log('Found:', data);
 
     if (data.length === 0) return null;
-    return data[0].published_date;
+    return true;
 }
 
 module.exports = {
-    saveLastPublishedDate,
-    getLastPublishedAt
+    saveFound,
+    getLastFound,
 }

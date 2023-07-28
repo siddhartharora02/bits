@@ -1,40 +1,45 @@
 require('dotenv').config();
 
 // Imports dependencies and set up http server
-const express = require('express');
-const body_parser = require('body-parser');
 const axios = require("axios");
+const express = require('express');
+const cheerio = require('cheerio');
+const body_parser = require('body-parser');
 
-const { getLastPublishedAt, saveLastPublishedDate}  = require("./utils/supabase");
+
+const { saveFound, getLastFound}  = require("./utils/supabase");
 const { sendTelegramMessage } = require("./utils/telegram");
 
 const app = express().use(body_parser.json()); // creates express http server
 
-const fetchJobs = async () => {
-    const url = process.env.JOBS_API_URL;
-    const response = await axios.get(url);
-    return response.data.data
+const fetchPosts = async () => {
+    const url = 'https://www.bitsadmission.com/'; // Replace with your URL
+    const { data: html } = await axios.get(url);
+    const $ = cheerio.load(html);
+    const bodyText = $('body').text();
+    const searchString = 'Iteration-03 results';
+    const lines = bodyText.split('\n').map(line => line.trimStart());
+
+    return lineFound = lines.some(line => line.startsWith(searchString));
+
 };
 
 
-const sendNewJobs = async () => {
+const sendRequest = async () => {
 
-    const lastEntryPublishedDate = await getLastPublishedAt();
+    const isDone = await getLastFound();
 
-    const jobs = await fetchJobs();
-    const newJobs = jobs.filter(job => new Date(job.published_at) > new Date(lastEntryPublishedDate));
+    if (isDone) return false;
 
-
-    if (newJobs.length > 0) {
-        for (const job of newJobs) {
-            await sendTelegramMessage(`New job posted: ${job.title} - ${job.link}`);
-        }
-
-        await saveLastPublishedDate(jobs[0]);
-        return 'OK - new jobs sent'
+    const found = await fetchPosts();
+    
+    if (found) {
+        await sendTelegramMessage("Iteration 3 Results are out");
+        await saveFound();
+        return true
     }
 
-    return 'No new jobs'
+    return false;
 }
 
 // Sets server port and logs message on success
@@ -42,7 +47,7 @@ app.listen(process.env.PORT || 1337, () => console.log('webhook is listening', p
 
 app.get('/main', async (req, res) =>{
     try {
-        const response = await sendNewJobs(req, res);
+        const response = await sendRequest(req, res);
         res.send(response);
     } catch (error) {
         await sendTelegramMessage("Bot is down");
