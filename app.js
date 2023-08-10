@@ -17,11 +17,9 @@ const fetchPosts = async () => {
     const { data: html } = await axios.get(url);
     const $ = cheerio.load(html);
     const bodyText = $('body').text();
-    const searchString = 'Iteration-03 results';
-    const lines = bodyText.split('\n').map(line => line.trimStart());
-
-    return lineFound = lines.some(line => line.startsWith(searchString));
-
+    const cleanedText = bodyText.replace(/\s+/g, ' ').trim();
+    const searchString = 'Click on the below links to check your latest assignment of Admissions in First Degree programmes (B.E., MSc, B. Pharm.) after Iteration-05.';
+    return cleanedText.includes(searchString);
 };
 
 
